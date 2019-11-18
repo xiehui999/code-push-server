@@ -9,6 +9,7 @@ var _   = require('lodash');
 var mysql = require('mysql2');
 var Promise = require("bluebird");
 var common = require("../core/utils/common");
+//./bin/db init --dbhost "127.0.0.1" --dbport "3306"  --dbuser "root" --dbpassword "code4android"
 var constConfig = require('../core/const');
 var yargs = require('yargs')
     .usage('Usage: $0 <command> [options]')

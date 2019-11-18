@@ -181,7 +181,7 @@ proto.updateCheck = function(deploymentKey, appVersion, label, packageHash, clie
         && !_.eq(packages.package_hash, packageHash)) {
         rs.packageId = packageId;
         rs.targetBinaryRange = deploymentsVersions.app_version;
-        rs.downloadUrl = rs.downloadURL = common.getBlobDownloadUrl(_.get(packages, 'blob_url'));
+        rs.downloadUrl = rs.downloadURL = common.getBlobDownloadUrl(_.get(packages, 'blob_url'),appVersion);
         rs.description = _.get(packages, 'description', '');
         rs.isAvailable = _.eq(packages.is_disabled, 1) ? false : true;
         rs.isDisabled = _.eq(packages.is_disabled, 1) ? true : false;
@@ -200,8 +200,8 @@ proto.updateCheck = function(deploymentKey, appVersion, label, packageHash, clie
         return models.PackagesDiff.findOne({where: {package_id:packages.id, diff_against_package_hash: packageHash}})
         .then((diffPackage) => {
           if (!_.isEmpty(diffPackage)) {
-            rs.downloadURL = common.getBlobDownloadUrl(_.get(diffPackage, 'diff_blob_url'));
-            rs.downloadUrl = common.getBlobDownloadUrl(_.get(diffPackage, 'diff_blob_url'));
+            rs.downloadURL = common.getBlobDownloadUrl(_.get(diffPackage, 'diff_blob_url'),appVersion);
+            rs.downloadUrl = common.getBlobDownloadUrl(_.get(diffPackage, 'diff_blob_url'),appVersion);
             rs.packageSize = _.get(diffPackage, 'diff_size', 0);
           }
           return;

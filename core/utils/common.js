@@ -216,10 +216,10 @@ common.getUploadTokenQiniu = function (mac, bucket, key) {
   return putPolicy.uploadToken(mac);
 };
 
-common.uploadFileToStorage = function (key, filePath) {
+common.uploadFileToStorage = function (key, filePath,appVersion) {
   var storageType = _.get(config, 'common.storageType');
   if ( storageType === 'local') {
-    return common.uploadFileToLocal(key, filePath);
+    return common.uploadFileToLocal(key, filePath,appVersion);
   } else if (storageType === 's3') {
     return common.uploadFileToS3(key, filePath);
   } else if (storageType === 'oss') {
@@ -234,7 +234,7 @@ common.uploadFileToStorage = function (key, filePath) {
   throw new AppError.AppError(`${storageType} storageType does not support.`);
 };
 
-common.uploadFileToLocal = function (key, filePath) {
+common.uploadFileToLocal = function (key, filePath,appVersion) {
   return new Promise((resolve, reject) => {
     var storageDir = _.get(config, 'local.storageDir');
     if (!storageDir) {
@@ -252,7 +252,8 @@ common.uploadFileToLocal = function (key, filePath) {
       log.error(e);
       throw new AppError.AppError(e.message);
     }
-    var subDir = key.substr(0, 2).toLowerCase();
+    // var subDir = key.substr(0, 2).toLowerCase();
+    var subDir = appVersion;
     var finalDir = path.join(storageDir, subDir);
     var fileName = path.join(finalDir, key);
     if (fs.existsSync(fileName)) {
@@ -291,12 +292,14 @@ common.uploadFileToLocal = function (key, filePath) {
   });
 };
 
-common.getBlobDownloadUrl = function (blobUrl) {
+common.getBlobDownloadUrl = function (blobUrl,appVersion) {
   var fileName = blobUrl;
   var storageType = _.get(config, 'common.storageType');
   var downloadUrl = _.get(config, `${storageType}.downloadUrl`);
   if ( storageType === 'local') {
-    fileName = blobUrl.substr(0, 2).toLowerCase() + '/' + blobUrl;
+    // fileName = blobUrl.substr(0, 2).toLowerCase() + '/' + blobUrl;
+    fileName = appVersion + '/' + blobUrl;
+
   }
   if (!validator.isURL(downloadUrl)) {
     var e = new AppError.AppError(`Please config ${storageType}.downloadUrl in config.js`);

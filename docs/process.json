@@ -3,7 +3,7 @@
         {
             "name"      : "code-push-server",
             "max_memory_restart" : "300M",
-            "script"    : "/path/to/code-push-server/bin/www",
+            "script"    : "./bin/www",
             "instances"  : "max", //开启实例数量，max为cpu核数
             "exec_mode"  : "cluster", //集群模式，最大提升网站并发
             "env" : {

@@ -281,16 +281,16 @@ router.post('/:appName/deployments/:deploymentName/release',
           throw new AppError.AppError("upload file type is invalidate");
         }
         log.debug('packageInfo:', data.packageInfo);
-        return packageManager.releasePackage(deploymentInfo.appid, deploymentInfo.id, data.packageInfo, data.package.path, uid)
+        return Promise.all([packageManager.releasePackage(deploymentInfo.appid, deploymentInfo.id, data.packageInfo, data.package.path, uid),data.packageInfo])
         .finally(() => {
           common.deleteFolderSync(data.package.path);
         });
       })
-      .then((packages) => {
+      .spread((packages,packageInfo) => {
         if (packages) {
           Promise.delay(1000)
           .then(() => {
-            packageManager.createDiffPackagesByLastNums(deploymentInfo.appid, packages, _.get(config, 'common.diffNums', 1))
+            packageManager.createDiffPackagesByLastNums(deploymentInfo.appid, packages, _.get(config, 'common.diffNums', 1),packageInfo.appVersion)
             .catch((e) => {
               log.error(e);
             });

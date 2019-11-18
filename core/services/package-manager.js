@@ -207,7 +207,8 @@ proto.generateOneDiffPackage = function (
   oldPackageDataCenter,
   diffPackageHash,
   diffManifestBlobHash,
-  isUseDiffText
+  isUseDiffText,
+  appVersion
 ) {
   var self = this;
   return models.PackagesDiff.findOne({
@@ -222,9 +223,13 @@ proto.generateOneDiffPackage = function (
     }
     log.debug('originDataCenter', originDataCenter);
     log.debug('oldPackageDataCenter', oldPackageDataCenter);
-    var downloadURL = common.getBlobDownloadUrl(diffManifestBlobHash);
+    var downloadURL = common.getBlobDownloadUrl(diffManifestBlobHash,appVersion);
+    console.log("downloadURL",downloadURL)
     return common.createFileFromRequest(downloadURL, path.join(workDirectoryPath,diffManifestBlobHash))
     .then(() => {
+      console.log("1111111111111111")
+      console.log("1111111111111111")
+      console.log("1111111111111111")
       var dataCenterContentPath = path.join(workDirectoryPath, 'dataCenter');
       common.copySync(originDataCenter.contentPath, dataCenterContentPath);
       var oldPackageDataCenterContentPath = oldPackageDataCenter.contentPath;
@@ -267,7 +272,7 @@ proto.generateOneDiffPackage = function (
       .then((data) => {
         return security.qetag(data.path)
         .then((diffHash) => {
-          return common.uploadFileToStorage(diffHash, fileName)
+          return common.uploadFileToStorage(diffHash, fileName,appVersion)
           .then(() => {
             var stats = fs.statSync(fileName);
             return models.PackagesDiff.create({
@@ -283,10 +288,11 @@ proto.generateOneDiffPackage = function (
   });
 };
 
-proto.createDiffPackagesByLastNums = function (appId, originalPackage, num) {
+proto.createDiffPackagesByLastNums = function (appId, originalPackage, num,appVersion) {
   var self = this;
   var Sequelize = require('sequelize');
   var packageId = originalPackage.id;
+  console.log("originalPackage",originalPackage)
   return Promise.all([
     models.Packages.findAll({
       where:{
@@ -308,11 +314,14 @@ proto.createDiffPackagesByLastNums = function (appId, originalPackage, num) {
     return [_.uniqBy(_.unionBy(lastNumsPackages, basePackages, 'id'), 'package_hash'), appInfo];
   })
   .spread((lastNumsPackages, appInfo) => {
-    return self.createDiffPackages(originalPackage, lastNumsPackages, _.get(appInfo, 'is_use_diff_text', constConfig.IS_USE_DIFF_TEXT_NO));
+    console.log("lastNumsPackagesappInfo",lastNumsPackages.length, appInfo,num)
+    return self.createDiffPackages(originalPackage, lastNumsPackages, _.get(appInfo, 'is_use_diff_text', constConfig.IS_USE_DIFF_TEXT_NO),appVersion);
   });
 };
 
-proto.createDiffPackages = function (originalPackage, destPackages, isUseDiffText) {
+proto.createDiffPackages = function (originalPackage, destPackages, isUseDiffText,appVersion) {
+  console.log("createDiffPackages",originalPackage)
+
   if (!_.isArray(destPackages)) {
     return Promise.reject(new AppError.AppError('第二个参数必须是数组'));
   }
@@ -326,12 +335,12 @@ proto.createDiffPackages = function (originalPackage, destPackages, isUseDiffTex
   var workDirectoryPath = path.join(os.tmpdir(), 'codepush_' + security.randToken(32));
   log.debug('workDirectoryPath', workDirectoryPath);
   return common.createEmptyFolder(workDirectoryPath)
-  .then(() => self.downloadPackageAndExtract(workDirectoryPath, package_hash, blob_url))
+  .then(() => self.downloadPackageAndExtract(workDirectoryPath, package_hash, blob_url),appVersion)
   .then((originDataCenter) => Promise.map(destPackages,
     (v) => {
-      var diffWorkDirectoryPath = path.join(workDirectoryPath, _.get(v, 'package_hash'));
+      var diffWorkDirectoryPath = path.join(workDirectoryPath, _.get(v, 'package_hash'))
       common.createEmptyFolderSync(diffWorkDirectoryPath);
-      return self.downloadPackageAndExtract(diffWorkDirectoryPath, _.get(v, 'package_hash'), _.get(v, 'blob_url'))
+      return self.downloadPackageAndExtract(diffWorkDirectoryPath, _.get(v, 'package_hash'), _.get(v, 'blob_url'),appVersion)
       .then((oldPackageDataCenter) =>
         self.generateOneDiffPackage(
           diffWorkDirectoryPath,
@@ -340,7 +349,8 @@ proto.createDiffPackages = function (originalPackage, destPackages, isUseDiffTex
           oldPackageDataCenter,
           v.package_hash,
           v.manifest_blob_url,
-          isUseDiffText
+          isUseDiffText,
+          appVersion
         )
       )
     }
@@ -409,9 +419,11 @@ proto.releasePackage = function (appId, deploymentId, packageInfo, filePath, rel
         return security.qetag(manifestFile);
       })
       .then((manifestHash) => {
+        console.log("manifestHash",manifestHash,manifestFile,blobHash,filePath)
+
         return Promise.all([
-          common.uploadFileToStorage(manifestHash, manifestFile),
-          common.uploadFileToStorage(blobHash, filePath)
+          common.uploadFileToStorage(manifestHash, manifestFile,appVersion),
+          common.uploadFileToStorage(blobHash, filePath,appVersion)
         ])
         .then(() => [packageHash, manifestHash, blobHash]);
       })

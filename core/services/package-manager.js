@@ -335,7 +335,7 @@ proto.createDiffPackages = function (originalPackage, destPackages, isUseDiffTex
   var workDirectoryPath = path.join(os.tmpdir(), 'codepush_' + security.randToken(32));
   log.debug('workDirectoryPath', workDirectoryPath);
   return common.createEmptyFolder(workDirectoryPath)
-  .then(() => self.downloadPackageAndExtract(workDirectoryPath, package_hash, blob_url),appVersion)
+  .then(() => self.downloadPackageAndExtract(workDirectoryPath, package_hash, blob_url,appVersion))
   .then((originDataCenter) => Promise.map(destPackages,
     (v) => {
       var diffWorkDirectoryPath = path.join(workDirectoryPath, _.get(v, 'package_hash'))
